@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Мой сайт</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#101218;
+    color:#fff;
+}
+
+header{
+    background:#181b24;
+    padding:16px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:sticky;
+    top:0;
+}
+
+.logo{
+    font-size:21px;
+    font-weight:bold;
+}
+
+button{
+    border:0;
+    border-radius:10px;
+    padding:11px 15px;
+    cursor:pointer;
+    background:#347cff;
+    color:white;
+    font-weight:bold;
+}
+
+button:hover{opacity:.85}
+
+.container{
+    max-width:900px;
+    margin:30px auto;
+    padding:15px;
+}
+
+.card{
+    background:#191c25;
+    border:1px solid #292d38;
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:18px;
+}
+
+input{
+    width:100%;
+    padding:13px;
+    margin:8px 0;
+    border:0;
+    border-radius:10px;
+    background:#292d37;
+    color:white;
+    outline:none;
+}
+
+.register{
+    max-width:400px;
+    margin:70px auto;
+}
+
+.role{
+    display:inline-block;
+    padding:7px 12px;
+    border-radius:20px;
+    background:#292d37;
+    margin-top:5px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+}
+
+.stat{
+    background:#242833;
+    padding:15px;
+    border-radius:12px;
+    text-align:center;
+}
+
+.stat b{
+    display:block;
+    font-size:24px;
+}
+
+.admin-panel{
+    border:1px solid #347cff;
+}
+
+.user{
+    padding:12px;
+    background:#242833;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+.hidden{display:none}
+
+.logout{
+    background:#d83b3b;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">Мой сайт</div>
+    <button id="logoutBtn" class="logout hidden" onclick="logout()">Выйти</button>
+</header>
+
+<div class="container">
+
+<!-- РЕГИСТРАЦИЯ -->
+
+<div id="register" class="card register">
+
+    <h1>Регистрация</h1>
+
+    <input id="name" placeholder="Придумай ник">
+
+    <input id="password"
+           type="password"
+           placeholder="Придумай пароль">
+
+    <input id="code"
+           placeholder="Код владельца/админа (необязательно)">
+
+    <button onclick="register()">
+        Зарегистрироваться
+    </button>
+
+    <p id="error"></p>
+
+    <small>
+        Без специального кода аккаунт будет обычным пользователем.
+    </small>
+
+</div>
+
+
+<!-- ОСНОВНОЙ САЙТ -->
+
+<div id="site" class="hidden">
+
+    <div class="card">
+
+        <h1>Добро пожаловать, <span id="username"></span>!</h1>
+
+        <div class="role">
+            Роль: <b id="userRole"></b>
+        </div>
+
+    </div>
+
+
+    <!-- СТАТИСТИКА -->
+
+    <div class="card">
+
+        <h2>Статистика</h2>
+
+        <div class="stats">
+
+            <div class="stat">
+                <b id="usersCount">0</b>
+                Пользователей
+            </div>
+
+            <div class="stat">
+                <b id="days">1</b>
+                Дней
+            </div>
+
+            <div class="stat">
+                <b>0</b>
+                Заказов
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- УВЕДОМЛЕНИЯ -->
+
+    <div class="card">
+
+        <h2>Новости</h2>
+
+        <p>Добро пожаловать на сайт.</p>
+
+        <p>Здесь скоро появятся новые функции.</p>
+
+    </div>
+
+
+    <!-- ПАНЕЛЬ АДМИНА -->
+
+    <div id="adminPanel" class="card admin-panel hidden">
+
+        <h2>Панель администратора</h2>
+
+        <p>
+            Этот раздел видят только администратор и владелец.
+        </p>
+
+        <h3>Зарегистрированные пользователи</h3>
+
+        <div id="usersList"></div>
+
+    </div>
+
+
+    <!-- ПАНЕЛЬ ВЛАДЕЛЬЦА -->
+
+    <div id="ownerPanel" class="card admin-panel hidden">
+
+        <h2>Панель владельца</h2>
+
+        <p>
+            У тебя максимальный уровень доступа.
+        </p>
+
+        <button onclick="siteMessage()">
+            Управление сайтом
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const OWNER_CODE = "1а2д3ооо";
+const ADMIN_CODE = "88888";
+
+
+function register(){
+
+    const name =
+        document.getElementById("name").value.trim();
+
+    const password =
+        document.getElementById("password").value;
+
+    const code =
+        document.getElementById("code").value.trim();
+
+    const error =
+        document.getElementById("error");
+
+
+    if(!name || !password){
+
+        error.textContent =
+            "Заполни ник и пароль.";
+
+        return;
+    }
+
+
+    let users =
+        JSON.parse(localStorage.getItem("users") || "[]");
+
+
+    if(users.some(u => u.name === name)){
+
+        error.textContent =
+            "Такой ник уже существует.";
+
+        return;
+    }
+
+
+    let role = "Пользователь";
+
+
+    if(code === OWNER_CODE){
+
+        role = "Владелец";
+
+    }else if(code === ADMIN_CODE){
+
+        role = "Админ";
+
+    }else if(code !== ""){
+
+        error.textContent =
+            "Неверный код. Можно зарегистрироваться без него.";
+
+        return;
+    }
+
+
+    const user = {
+
+        name:name,
+
+        password:password,
+
+        role:role,
+
+        created:Date.now()
+
+    };
+
+
+    users.push(user);
+
+    localStorage.setItem(
+        "users",
+        JSON.stringify(users)
+    );
+
+
+    localStorage.setItem(
+        "currentUser",
+        JSON.stringify(user)
+    );
+
+
+    showSite(user);
+}
+
+
+function showSite(user){
+
+    document
+        .getElementById("register")
+        .classList.add("hidden");
+
+    document
+        .getElementById("site")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("logoutBtn")
+        .classList.remove("hidden");
+
+
+    document.getElementById("username")
+        .textContent = user.name;
+
+
+    document.getElementById("userRole")
+        .textContent = user.role;
+
+
+    const users =
+        JSON.parse(localStorage.getItem("users") || "[]");
+
+
+    document.getElementById("usersCount")
+        .textContent = users.length;
+
+
+    if(user.role === "Админ" ||
+       user.role === "Владелец"){
+
+        document
+            .getElementById("adminPanel")
+            .classList.remove("hidden");
+
+        showUsers();
+    }
+
+
+    if(user.role === "Владелец"){
+
+        document
+            .getElementById("ownerPanel")
+            .classList.remove("hidden");
+    }
+}
+
+
+function showUsers(){
+
+    const users =
+        JSON.parse(localStorage.getItem("users") || "[]");
+
+    const list =
+        document.getElementById("usersList");
+
+    list.innerHTML = "";
+
+    users.forEach(user => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "user";
+
+        div.innerHTML =
+            "<b>" + escapeHTML(user.name) +
+            "</b><br>Роль: " +
+            escapeHTML(user.role);
+
+        list.appendChild(div);
+
+    });
+}
+
+
+function escapeHTML(text){
+
+    return String(text)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+
+function logout(){
+
+    localStorage.removeItem("currentUser");
+
+    location.reload();
+}
+
+
+function siteMessage(){
+
+    alert(
+        "Раздел управления сайтом открыт для владельца."
+    );
+}
+
+
+/* Автоматическое восстановление */
+
+const current =
+    JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+    );
+
+if(current){
+
+    showSite(current);
+
+}
+
+</script>
+
+</body>
+</html>
